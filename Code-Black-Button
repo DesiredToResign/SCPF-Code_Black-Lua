@@ -1,0 +1,191 @@
+-- MADE BY DESIREDTORESIGN
+
+local emergencyLight = game.Workspace:FindFirstChild("Emergency Lighting")
+local primaryLight = game.Workspace:FindFirstChild("Primary Lighting")
+local secondaryLight = game.Workspace:FindFirstChild("Secondary Lighting")
+local globalSounds = game.Workspace:FindFirstChild("Global Sounds") and game.Workspace["Global Sounds"]:FindFirstChild("LightingSFX")
+local screens = game.Workspace:FindFirstChild("Screens") and game.Workspace.Screens:FindFirstChild("StatusScreens")
+local sounds = game.Workspace:FindFirstChild("Speakers")
+
+local THECODE = "CB"
+local ALARM = "CBAlarm"
+
+local onoff = false
+local debounce = false -- Debounce flag
+local debounceTime = 1 -- Debounce time in seconds
+
+-- To store the original state of Bulb and Primary Lighting
+local bulbStates = {}
+
+-- Function to toggle primary lighting
+local function togglePrimaryLighting()
+	if primaryLight then
+		for _, lights in pairs(primaryLight:GetChildren()) do
+			if lights.Name == "PrimaryLight" then
+				for _, light in pairs(lights:GetDescendants()) do
+					if light.Name == "ColoredNeon" then
+						light.Material = onoff and Enum.Material.Neon or Enum.Material.Glass
+						for _, pointLight in pairs(light:GetDescendants()) do
+							if pointLight:IsA("PointLight") then
+								pointLight.Enabled = onoff
+								if onoff then
+									globalSounds.LightingPrimaryOff:Play()
+								else
+									globalSounds.LightingPrimaryOn:Play()
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Function to toggle secondary lighting
+local function toggleSecondaryLighting()
+	if secondaryLight then
+		for _, lights in pairs(secondaryLight:GetChildren()) do
+			if lights.Name == "SecondaryLight" then
+				for _, light in pairs(lights:GetDescendants()) do
+					if light.Name == "Light1" or light.Name == "Light2" then
+						light.Material = onoff and Enum.Material.Glass or Enum.Material.Neon
+						for _, spotLight in pairs(light:GetDescendants()) do
+							if spotLight:IsA("SpotLight") then
+								spotLight.Enabled = not onoff
+								if onoff then
+									globalSounds.LightingSecondaryOn:Play()
+								else
+									globalSounds.LightingSecondaryOff:Play()
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Function to toggle emergency lighting
+local function toggleEmergencyLighting()
+	if emergencyLight then
+		for _, model in pairs(emergencyLight:GetChildren()) do
+			if model.Name == "EmergencyLight" then
+				for _, light in pairs(model:GetDescendants()) do
+					if light.Name == "Spinner" then
+						for _, motor in pairs(light:GetDescendants()) do
+							if motor:IsA("HingeConstraint") then
+								motor.AngularVelocity = onoff and 0 or 10
+							end
+						end
+						for _, beam in pairs(light:GetDescendants()) do
+							if beam.Name == "Beam0" or beam.Name == "Beam1" then
+								for _, beamPart in pairs(beam:GetDescendants()) do
+									if beamPart:IsA("Beam") then
+										beamPart.Enabled = not onoff
+									end
+								end
+							end
+						end
+						for _, spotlight in pairs(light:GetDescendants()) do
+							if spotlight:IsA("SpotLight") then
+								spotlight.Enabled = not onoff
+							end
+						end
+					elseif light.Name == "Bulb" then
+						if not bulbStates[light] then
+							bulbStates[light] = {
+								Material = light.Material,
+								Transparency = light.Transparency
+							}
+						end
+						if onoff then
+							local state = bulbStates[light]
+							light.Material = state.Material
+							light.Transparency = state.Transparency
+						else
+							light.Material = Enum.Material.Neon
+							light.Transparency = 0
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Function to toggle screens
+local function toggleScreens()
+	if screens then
+		for _, screen in pairs(screens:GetChildren()) do
+			if screen.Name == "StatusScreen" then
+				for _, textScreen in pairs(screen:GetDescendants()) do
+					if textScreen.Name == "ActualScreen" then
+						for _, textGui in pairs(textScreen:GetDescendants()) do
+							if textGui.Name == "TEXTGUI" then
+								for _, code in pairs(textGui:GetDescendants()) do
+									if code.Name == THECODE then
+										code.Visible = not onoff
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Function to toggle sounds
+local function toggleSounds()
+	for _, speakers in pairs(sounds:GetChildren()) do
+		if speakers.Name == "Speakers" then
+			for _, actualSpeaker in pairs(speakers:GetDescendants()) do
+				if actualSpeaker.Name == "ActualSpeaker" then
+					for _, sound in pairs(actualSpeaker:GetDescendants()) do
+						if sound.Name == ALARM then
+							if not onoff then
+								sound:Play()
+							else
+								sound:Stop()
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Function to toggle lighting and sounds
+local function toggleOn()
+	if debounce then return end
+	debounce = true
+	wait(debounceTime)
+	togglePrimaryLighting()
+	wait(1)
+	toggleSecondaryLighting()
+	wait(1)
+	toggleEmergencyLighting()
+	toggleScreens()
+	toggleSounds()
+
+	onoff = not onoff
+	debounce = false
+end
+
+-- Connect the function to the MouseClick event
+script.Parent.MouseClick:Connect(function(plr)
+	if plr.Backpack:FindFirstChild("Level-5") then
+		toggleOn()
+	else
+		local nopeSound = script.Parent.Parent.Parent.CodeSelector:FindFirstChild("nope")
+		if nopeSound then
+			nopeSound:Play()
+		else
+			warn("Nope sound not found")
+		end
+	end
+end)
