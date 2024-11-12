@@ -1,4 +1,4 @@
--- MADE BY DESIREDTORESIGN
+-- MADE BY DESIREDTORESIGN 2024
 
 local emergencyLight = game.Workspace:FindFirstChild("Emergency Lighting")
 local primaryLight = game.Workspace:FindFirstChild("Primary Lighting")
